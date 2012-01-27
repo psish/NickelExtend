@@ -391,7 +391,7 @@ window.HTMLElement.prototype.set = function set(key, value)
 
 
 /*
-* setStyle: Set one or several CSS style(s) to an Element.
+* setStyle: Sets one or several CSS style(s) to an Element.
 *
 * @param String/Object key Name of the CSS attribute to set or Object of styles.
 * @param [String] value Value of the CSS attribute to set (Only for single set).
@@ -413,6 +413,30 @@ window.HTMLElement.prototype.setStyle = function setStyle(key, value)
 
 };
 window.HTMLElement.prototype.setStyles = window.HTMLElement.prototype.setStyle;
+
+
+/*
+* getStyle: Gets one or several CSS style(s) from an Element.
+*
+* @param String/Array key Name of the CSS attribute(s) to get or Array of keys.
+*/
+window.HTMLElement.prototype.getStyle = function getStyle(key)
+{
+
+    if (typeof key == 'string') {
+        return window.getComputedStyle(this).getPropertyValue(key);    
+    } else if (typeof key == 'object') {
+        var result = new Object();
+        Array.each(key, function(s) {
+
+            result[s] = this.getStyle(s);
+        
+        }.bind(this));
+        return result;
+    }
+
+};
+window.HTMLElement.prototype.getStyles = window.HTMLElement.prototype.getStyle;
 
 
 /*
