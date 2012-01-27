@@ -79,10 +79,32 @@ Function.prototype.subImplement = function prototypeSubCopy(key, value)
 
 /*****
 *
-* Selectors
-*  ~ HTMLElements Selectors $, $$ and $0
+* Window
+*  ~ Window extends and HTMLElements Selectors $, $$ and $0
 *
 *****/
+
+
+/**
+* addEvent: wrapper for addEventListener.
+*
+* @param String/Object id Event name or List of Events.
+* @param [Function] fn The function to call on event (Only for single event).
+*/
+window.addEvent = function addEvent(id, fn)
+{
+
+    if (typeof id == 'string') {
+        this.addEventListener(id, fn, true);
+    } else if (typeof id == 'object') {
+        for (var key in id) {
+            this.addEvent(key, id[key]);
+        }
+    }
+
+    return this;
+
+};
 
 
 /**
@@ -231,8 +253,8 @@ window.HTMLElement.prototype.addEvent = function addEvent(id, fn)
         this.$events[id] = fn;
         this.addEventListener(id, fn, true);
     } else if (typeof id == 'object') {
-        for (var key in events) {
-            this.addEvent(key, events[key]);
+        for (var key in id) {
+            this.addEvent(key, id[key]);
         }
     }
 
