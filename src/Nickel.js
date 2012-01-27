@@ -6,7 +6,7 @@
     @authors
         John Chavarria <m@psi.sh>
     @version 0.1
-    @license GPL v3.0 (www.gnu.org/copyleft/gpl.html) 
+    @license LGPL v3.0 (http://www.gnu.org/licenses/lgpl.html) 
 
     @copyright (c) 2012, Authors.
 */
@@ -199,11 +199,11 @@ Array.prototype.contains = function contains(item, from)
 Object.prototype.each = function each(el, fn)
 {
 
-	for (var key in el){
-		if (hasOwnProperty.call(el, key)) {
+    for (var key in el){
+        if (hasOwnProperty.call(el, key)){
             fn.call(this, el[key], key, el)
         }
-	}
+    }
 
 };
 
