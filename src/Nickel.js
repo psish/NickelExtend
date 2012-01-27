@@ -1,0 +1,387 @@
+/*  
+    Nickel.js
+     ~ Simple JavaScript Framework for Chrome Only.
+     ~ Inspired by the great MooTools (http://www.mootools.net/)
+     
+    @authors
+        John Chavarria <m@psi.sh>
+    @version 1.0 beta
+    @license GPL v3.0 (www.gnu.org/copyleft/gpl.html) 
+
+    @copyright (c) 2012, Authors.
+*/
+
+
+(function() {
+
+
+/*****
+*
+* Function
+*  ~ Extends the Function prototype
+*
+*****/
+
+
+/**
+* pass: Returns a closure with arguments and bind.
+*
+* @param Mixed args The arguments to pass to the function.
+* @param Object The object that the "this" of the function will refer to.
+*/
+Function.prototype.pass = function pass(args, bind)
+{
+	var self = this;
+	if (args != null) args = Array(args);
+	return function(){
+		return self.apply(bind, args || arguments);
+	};
+};
+
+
+/**
+* delay: Delays the execution of a function by a specified duration.
+*
+* @param Number delay The duration to wait (in milliseconds).
+* @param Object bind The object that the "this" of the function will refer to.
+* @param Mixed args The arguments passed.
+*/
+Function.prototype.delay = function delay(delay, bind, args)
+{
+
+	return setTimeout(this.pass((args == null ? [] : args), bind), delay);
+
+};
+
+
+/**
+* subImplement: Implement a function to a sub value of an object.
+*
+* @param String key Function name.
+* @param String value The sub value.
+*/
+Function.prototype.subImplement = function prototypeSubCopy(key, value)
+{
+
+    this.prototype[key] = function() {
+        this[value][key].apply(this[value], arguments);
+    }
+    
+};
+
+
+/*****
+*
+* Selectors
+*  ~ HTMLElements Selectors $, $$ and $0
+*
+*****/
+
+
+/**
+* $: Gets an Element by its id.
+*
+* @param String el Element id.
+*/
+window.$ = function $(el)
+{
+
+    return document.getElementById(el);
+    
+};
+
+
+/**
+* $$: Gets a collection of Element by their class, id or CSS custom selector.
+*
+* @param String selector CSS Selector.
+*/
+window.$$ = function $$(selector)
+{
+
+    if (typeof selector == 'string') {
+        selector = selector.split(' ');
+        if (selector.length > 1) {
+            var id = selector[0],
+                cl = selector[1];
+            id = $(id.slice(1, id.length));
+            return id.getElementsByClassName(cl.slice(1, cl.length)) 
+        } else {
+            var expression = selector[0].match(/^([#.]?)((?:[\w-]+|\*))$/);
+            var symbol     = expression[1],
+			    name       = expression[2];
+			if (symbol == '#') {
+			    return $(name);
+			} else {
+			    return document.getElementsByClassName(name);
+			}
+        }            
+    } else {
+        return null;
+    }        
+
+};
+
+
+/**
+* $0: Returns the first occurrence of $$.
+*
+* @param String selector CSS Selector.
+*/
+window.$0 = function $0(selector)
+{
+
+    return $$(selector)[0];
+
+};
+
+
+/*****
+*
+* Array
+*  ~ Extends the Array prototype
+*
+*****/
+
+
+/**
+* each: Foreach into an array.
+*
+* @param Array el The Array.
+* @param Function fn The function to apply to each element.
+*/
+Array.each = function each(el, fn)
+{
+
+    for (var i = 0; i < el.length; i++) {
+        fn.call(el, el[i], this);
+    }
+
+};
+
+
+/*****
+*
+* Object
+*  ~ Extends the Object prototype
+
+*
+*****/
+
+
+/**
+
+* each: Foreach into an object.
+*
+* @param Object el The Object.
+* @param Function fn The function to apply to each element.
+*/
+Object.each = function each(el, fn)
+{
+
+	for (var key in el){
+		if (hasOwnProperty.call(el, key)) {
+            fn.call(this, el[key], key, el)
+        }
+	}
+
+};
+
+
+/*****
+*
+* Element
+*  ~ Extends native HTMLElement and creates a type Element.
+*
+*****/
+
+
+/**
+
+* addEvent: Adds EventListener to a HTMLElement.
+*
+* @param String id Event name.
+* @param Function fn The function to call on event.
+*/
+window.HTMLElement.prototype.addEvent = function addEvent(id, fn)
+{
+
+    this.$events = (this.$events ? this.$events : {});
+    this.$events[id] = fn;
+    this.addEventListener(id, fn, true);
+
+};
+
+
+/*
+* addEvents: Adds several Events to a HTMLElement.
+*
+* @param Object events List of events.
+*/
+window.HTMLElement.prototype.addEvents = function addEvents(events)
+{
+
+    for (var key in events) {
+        this.addEvent(key, events[key]);
+    }
+
+};
+
+
+/*
+* removeEvent: Removes an Event from a HTMLElement.
+*
+* @param String id Name of the Event to remove.
+*/
+window.HTMLElement.prototype.removeEvent = function removeEvent(id)
+{
+
+    this.removeEventListener(id, this.$events[id], true);
+
+};
+
+
+/*
+* removeAllEvents: Removes all Events from a HTMLElement.
+*
+*/
+window.HTMLElement.prototype.removeAllEvents = function removeAllEvents()
+{
+
+    if (this.$events) {
+        for (var key in this.$events) {
+            this.removeEvent(key);
+        }
+    }
+
+};
+
+
+/*
+* dispose: Removes an Element from DOM.
+*
+*/
+window.HTMLElement.prototype.dispose = function dispose()
+{
+
+	return (this.parentNode) ? this.parentNode.removeChild(this) : this;
+
+};
+
+
+/*
+* destroy: Removes an Element from DOM after emptying it and removing Events.
+*
+*/
+window.HTMLElement.prototype.destroy = function destroy()
+{
+
+    this.removeAllEvents();
+    this.empty();
+    this.dispose();
+
+};
+
+
+/*
+* empty: Empties an HTML Element.
+*
+*/
+window.HTMLElement.prototype.empty = function empty()
+{
+
+    var content = this.getElementsByTagName('*');
+    var len = content.length;
+    for (var i = 0; i < len; i++) {
+        if (content[0]) {
+            content[0].destroy();        
+        }
+    }
+    this.innerHTML = '';
+    
+};
+
+
+/*
+* getChildren: Get the list of child nodes.
+*
+* @param [String] node Node type, default is all.
+* @return Array The HTMLElement Collection.
+*/
+window.HTMLElement.prototype.getChildren = function getChildren(node)
+{
+
+    node = node || '*';
+    return this.getElementsByTagName(node);
+
+};
+
+
+/*
+* Element: Creates an Element.
+*
+* @param String node Node type.
+* @param [Object] options Element Options (id, rel, html...).
+*/
+window.Element = function Element(node, options)
+{
+
+    this.$element = document.createElement(node);
+
+    for (var o in options) {
+        if (o.toUpperCase() == 'TEXT') {
+            this.$element.innerText = options[o];
+        } else if (o.toUpperCase() == 'HTML') {
+            this.$element.innerHTML = options[o];        
+        } else {
+            this.$element.setAttribute(o, options[o]);        
+        } 
+    }
+
+    return this;
+
+};
+
+
+/*
+* inject: Injects an Element into DOM.
+*
+* @param HTMLElement parent Where to inject.
+* @param [String] The position to inject (top, bottom, before, after).
+*/
+window.Element.prototype.inject = function inject(parent, position)
+{
+
+    position = position || false;
+
+    var el = null;
+    
+    if (position == 'top') {
+        var firstChild = parent.firstChild;
+        parent = firstChild.parentNode;
+        el = firstChild;
+    } else if (position == 'before') {
+        el = parent;
+        parent = parent.parentNode;
+    } else if (position == 'after') {
+        var next = parent.nextSibling;    
+        parent = next.parentNode;
+        el = next;
+    }
+
+    parent.insertBefore(this.$element, el);
+
+    return this;
+
+};
+
+
+// Copies the HTMLElement prototype into the Element one.
+for (var key in window.HTMLElement.prototype) {
+    if (typeof window.HTMLElement.prototype[key] == 'function') {
+        window.Element.subImplement(key, '$element');
+    }
+}
+
+
+})();
