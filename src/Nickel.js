@@ -334,6 +334,26 @@ Object.prototype.merge = function merge(obj)
 };
 
 
+/**
+* toQueryString: Converts an object to a query string.
+*
+* @param Object obj The Object to convert.
+*/
+Object.prototype.toQueryString = function toQueryString(obj)
+{
+
+    var queryString = [];
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key) && obj[key] != null) {
+            queryString.push(key + '=' + encodeURIComponent(obj[key]));
+        }
+    }
+
+    return queryString.join('&');
+    
+};
+
+
 /*****
 *
 * Request
@@ -372,6 +392,8 @@ XMLHttpRequest.prototype.sendAsBinary = function(datastr)
 window.Request = function Request(options)
 {
 
+    options = options || {};
+
     this.$request = new XMLHttpRequest();
     this.options  = {
         method   : 'POST',
@@ -380,11 +402,33 @@ window.Request = function Request(options)
 			'X-Requested-With'  : 'XMLHttpRequest',
 			'Accept'            : 'text/javascript, text/html, application/xml,'
 			 + ' text/xml, */*'
-		},        
+		}       
     }
     this.options.merge(options);
-    
+
+    this.$request.onreadystatechange = function(e) {
+        if (this.$request.readyState == 4) {
+            if (this.$request.status == 200) {
+                if (this.options.onSuccess) {
+                    this.options.onSuccess(this.$request.responseText);
+                }
+            } else {
+                if (this.options.onFailure) {
+                    this.options.onFailure(this.$request);
+                }
+            }
+        }
+    }.bind(this);
+
     this.$request.open(this.options.method, this.options.uri, true);
+
+    if (this.options.headers) {
+        for (var key in this.options.headers) {
+            if (this.options.headers.hasOwnProperty(key)) {
+                this.$request.setRequestHeader(key, this.options.headers[key]);
+            }
+        }
+    }
 
 };
 
@@ -394,10 +438,16 @@ window.Request = function Request(options)
 *
 * @param [Mixed] options Requests parameters.
 */
-window.Request.prototype.send = function send(options)
+window.Request.prototype.send = function send(data)
 {
 
-    this.$request.send(options);
+    data = data || this.options.data || '';
+
+    if (typeof data == 'object') {
+        data = Object.toQueryString(data);
+    }
+    
+    this.$request.send(data);
     return this;
     
 };
@@ -408,10 +458,10 @@ window.Request.prototype.send = function send(options)
 *
 * @param [Mixed] options Requests parameters.
 */
-window.Request.prototype.sendAsBinary = function sendAsBinary(options)
+window.Request.prototype.sendAsBinary = function sendAsBinary(data)
 {
 
-    this.$request.sendAsBinary(options);
+    this.$request.sendAsBinary(data);
     return this;
 
 };
