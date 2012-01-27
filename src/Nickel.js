@@ -203,6 +203,56 @@ Array.prototype.contains = function contains(item, from)
 };
 
 
+/**
+* clean: Cleans an array of null values.
+*
+*/
+Array.prototype.clean = function clean()
+{
+
+    return this.filter(function(item) {
+        return item != null;
+    });
+
+};
+
+
+/**
+* combine: Combines an Array with another.
+*
+* @param Array array The array to combine to the original
+*/
+Array.prototype.combine = function combine(array)
+{
+
+    for (var i = 0; i < array.length; i++) {
+        if (!this.contains(array[i])) {
+            this.push(array[i]);
+        }
+    }
+
+    return this;
+
+};
+
+
+/**
+* clone: Clones an Array.
+*
+*/
+Array.prototype.clone = function clone()
+{
+
+    var ret = new Array();
+    for (var i = 0; i < this.length; i++) {
+        ret.push(this[i]);
+    }
+
+    return ret;
+
+};
+
+
 /*****
 *
 * Object
@@ -212,7 +262,6 @@ Array.prototype.contains = function contains(item, from)
 
 
 /**
-
 * each: Foreach into an object.
 *
 * @param Object el The Object.
@@ -227,6 +276,42 @@ Object.prototype.each = function each(el, fn)
         }
     }
 
+};
+
+
+/**
+* clone: Clones an object.
+*
+*/
+Object.prototype.clone = function clone()
+{
+
+    var ret = new Object();
+    for (var key in this){
+        if (this.hasOwnProperty(key)) {
+            ret[key] = this[key];
+        }
+    }
+    return ret;
+    
+};
+
+
+/**
+* length: Returns the length of an object.
+*
+*/
+Object.prototype.length = function length()
+{
+
+    var ret = 0;
+    for (var key in this){
+        if (this.hasOwnProperty(key)) {
+            ret++;
+        }
+    }
+    return ret;
+    
 };
 
 
