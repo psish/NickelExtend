@@ -5,7 +5,7 @@
      
     @authors
         John Chavarria <m@psi.sh>
-    @version 1.0 beta
+    @version 0.1
     @license GPL v3.0 (www.gnu.org/copyleft/gpl.html) 
 
     @copyright (c) 2012, Authors.
@@ -13,6 +13,13 @@
 
 
 (function() {
+
+
+// Nickeljs global object
+this.Nickel = {
+    version: '0.1',
+    Tools: {}
+};
 
 
 /*****
@@ -27,7 +34,7 @@
 * pass: Returns a closure with arguments and bind.
 *
 * @param Mixed args The arguments to pass to the function.
-* @param Object The object that the "this" of the function will refer to.
+* @param Object bind The object that the "this" of the function will refer to.
 */
 Function.prototype.pass = function pass(args, bind)
 {
@@ -150,7 +157,7 @@ window.$0 = function $0(selector)
 * @param Array el The Array.
 * @param Function fn The function to apply to each element.
 */
-Array.each = function each(el, fn)
+Array.prototype.each = function each(el, fn)
 {
 
     for (var i = 0; i < el.length; i++) {
@@ -160,11 +167,24 @@ Array.each = function each(el, fn)
 };
 
 
+/**
+* contains: Tests if an item is present in an Array.
+*
+* @param Mixed item The item to search in the Array.
+* @param [Number] from Begining index.
+*/
+Array.prototype.contains = function contains(item, from)
+{
+
+	return this.indexOf(item, from) != -1;
+
+};
+
+
 /*****
 *
 * Object
 *  ~ Extends the Object prototype
-
 *
 *****/
 
@@ -176,7 +196,7 @@ Array.each = function each(el, fn)
 * @param Object el The Object.
 * @param Function fn The function to apply to each element.
 */
-Object.each = function each(el, fn)
+Object.prototype.each = function each(el, fn)
 {
 
 	for (var key in el){
@@ -198,47 +218,53 @@ Object.each = function each(el, fn)
 
 /**
 
-* addEvent: Adds EventListener to a HTMLElement.
+* addEvent: Adds one or several EventListener(s) to a HTMLElement.
 *
-* @param String id Event name.
-* @param Function fn The function to call on event.
+* @param String/Object id Event name or List of Events.
+* @param [Function] fn The function to call on event (Only for single event).
 */
 window.HTMLElement.prototype.addEvent = function addEvent(id, fn)
 {
 
-    this.$events = (this.$events ? this.$events : {});
-    this.$events[id] = fn;
-    this.addEventListener(id, fn, true);
-
-};
-
-
-/*
-* addEvents: Adds several Events to a HTMLElement.
-*
-* @param Object events List of events.
-*/
-window.HTMLElement.prototype.addEvents = function addEvents(events)
-{
-
-    for (var key in events) {
-        this.addEvent(key, events[key]);
+    if (typeof id == 'string') {
+        this.$events = (this.$events ? this.$events : {});
+        this.$events[id] = fn;
+        this.addEventListener(id, fn, true);
+    } else if (typeof id == 'object') {
+        for (var key in events) {
+            this.addEvent(key, events[key]);
+        }
     }
 
+    return this;
+
 };
+window.HTMLElement.prototype.addEvents = window.HTMLElement.prototype.addEvent;
 
 
 /*
 * removeEvent: Removes an Event from a HTMLElement.
 *
-* @param String id Name of the Event to remove.
+* @param String/Array id Name(s) of the Event(s) to remove.
 */
 window.HTMLElement.prototype.removeEvent = function removeEvent(id)
 {
 
-    this.removeEventListener(id, this.$events[id], true);
+    if (typeof id == 'string') {
+        this.removeEventListener(id, this.$events[id], true);
+    } else if (typeof id == 'object') {
+        Array.each(id, function(k) {
+
+            this.removeEvent(k);
+        
+        }.bind(this));    
+    }
+
+    return this;
 
 };
+window.HTMLElement.prototype.removeEvents =
+ window.HTMLElement.prototype.removeEvent;
 
 
 /*
@@ -253,6 +279,8 @@ window.HTMLElement.prototype.removeAllEvents = function removeAllEvents()
             this.removeEvent(key);
         }
     }
+
+    return this;
 
 };
 
@@ -280,6 +308,8 @@ window.HTMLElement.prototype.destroy = function destroy()
     this.empty();
     this.dispose();
 
+    return this;
+
 };
 
 
@@ -298,6 +328,8 @@ window.HTMLElement.prototype.empty = function empty()
         }
     }
     this.innerHTML = '';
+
+    return this;
     
 };
 
@@ -315,6 +347,72 @@ window.HTMLElement.prototype.getChildren = function getChildren(node)
     return this.getElementsByTagName(node);
 
 };
+
+
+/*
+* get: Get an attribute on an Element.
+*
+* @param String key Name of the attribute to get.
+*/
+window.HTMLElement.prototype.get = function get(key)
+{
+
+    if (key.toUpperCase() == 'TEXT') {
+        return this.innerText;    
+    } else if (key.toUpperCase() == 'HTML') {
+        return this.innerHTML;
+    } else {
+        return this.getAttribute(key);
+    }    
+
+};
+
+
+/*
+* set: Set an attribute on an Element.
+*
+* @param String key Name of the attribute to set.
+* @param String value Value of the attribute to set.
+*/
+window.HTMLElement.prototype.set = function set(key, value)
+{
+
+    if (key.toUpperCase() == 'TEXT') {
+        this.innerText = value;    
+    } else if (key.toUpperCase() == 'HTML') {
+        this.innerHTML = value;
+    } else {
+        this.setAttribute(key, value);
+    }
+
+    return this;
+
+};
+
+
+/*
+* setStyle: Set one or several CSS style(s) to an Element.
+*
+* @param String/Object key Name of the CSS attribute to set or Object of styles.
+* @param [String] value Value of the CSS attribute to set (Only for single set).
+*/
+window.HTMLElement.prototype.setStyle = function setStyle(key, value)
+{
+
+    if (typeof key == 'string') {
+        this.style[key] = Nickel.Tools.Styles.formatStyleValue(key, value);    
+    } else if (typeof key == 'object') {
+        Object.each(key, function(value, index) {
+
+            this.setStyle(index, value);
+
+        }.bind(this));
+    }
+
+    return this;
+
+};
+window.HTMLElement.prototype.setStyles = window.HTMLElement.prototype.setStyle;
 
 
 /*
@@ -382,6 +480,53 @@ for (var key in window.HTMLElement.prototype) {
         window.Element.subImplement(key, '$element');
     }
 }
+
+
+/*****
+*
+* Tools
+*  ~ Nickeljs private Tools
+*
+*****/
+
+
+/**
+* Tools.Styles: Tools for CSS Styles handling.
+*
+*/
+Nickel.Tools.Styles = {
+
+    /**
+    * px: Array of CSS Properties with default values as pixels.
+    *
+    */
+    px: [
+        "border-bottom-left-radius", "border-bottom-right-radius",
+        "border-bottom-width", "border-left-width", "border-right-width",
+        "border-top-left-radius", "border-top-right-radius", "border-top-width",
+        "bottom", "font-size", "height", "left", "letter-spacing",
+        "line-height", "margin-bottom", "margin-left", "margin-right",
+        "margin-top", "max-height", "max-width", "min-height", "min-width",
+        "outline-width", "padding-bottom", "padding-left", "padding-right",
+        "padding-top", "right", "top", "width", "word-spacing", "stroke-width"
+    ],
+
+    /**
+    * formatStyleValue: Formats a Number style value regarding on the key.
+    *
+    * @param String key The CSS Style key.
+    * @param Number value The CSS Style original value.
+    * @return Mixed The formated Style value.
+    */
+    formatStyleValue: function formatStyleValue(key, value)
+    {
+
+        return ((typeof value == 'number' && this.px.contains(key))
+         ? value.toString()+'px' : value);
+    
+    }
+
+};
 
 
 })();
