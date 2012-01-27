@@ -391,6 +391,27 @@ window.HTMLElement.prototype.set = function set(key, value)
 
 
 /*
+* remove: Removes an attribute on an Element.
+*
+* @param String key Name of the attribute to remove.
+*/
+window.HTMLElement.prototype.remove = function remove(key)
+{
+
+    if (key.toUpperCase() == 'TEXT') {
+        this.innerText = '';    
+    } else if (key.toUpperCase() == 'HTML') {
+        this.innerHTML = '';
+    } else {
+        this.removeAttribute(key, value);
+    }
+
+    return this;
+
+};
+
+
+/*
 * setStyle: Sets one or several CSS style(s) to an Element.
 *
 * @param String/Object key Name of the CSS attribute to set or Object of styles.
@@ -427,9 +448,9 @@ window.HTMLElement.prototype.getStyle = function getStyle(key)
         return window.getComputedStyle(this).getPropertyValue(key);    
     } else if (typeof key == 'object') {
         var result = new Object();
-        Array.each(key, function(s) {
+        Array.each(key, function(k) {
 
-            result[s] = this.getStyle(s);
+            result[k] = this.getStyle(k);
         
         }.bind(this));
         return result;
@@ -437,6 +458,31 @@ window.HTMLElement.prototype.getStyle = function getStyle(key)
 
 };
 window.HTMLElement.prototype.getStyles = window.HTMLElement.prototype.getStyle;
+
+
+/*
+* removeStyle: Removes one or several CSS style(s) from an Element.
+*
+* @param String/Array key Name of the CSS attribute(s) to remove.
+*/
+window.HTMLElement.prototype.removeStyle = function removeStyle(key)
+{
+
+    if (typeof key == 'string') {
+        this.setStyle(key, 0);
+    } else if (typeof key == 'object') {
+        var keys = new Object();
+        Array.each(key, function(k) {
+
+            keys[k] = 0;
+
+        });
+        this.setStyles(keys);
+    }
+
+};
+window.HTMLElement.prototype.removeStyles =
+ window.HTMLElement.prototype.removeStyle;
 
 
 /*
@@ -545,9 +591,18 @@ Nickel.Tools.Styles = {
     formatStyleValue: function formatStyleValue(key, value)
     {
 
-        return ((typeof value == 'number' && this.px.contains(key))
-         ? value.toString()+'px' : value);
-    
+        if (value == '' || value == false || value == undefined
+         || value == null) {
+            if (this.px.contains(key)) {
+                return '0px';
+            } else {
+                return 'none';
+            }
+        } else {
+            return ((typeof value == 'number' && this.px.contains(key))
+             ? value.toString()+'px' : value);
+        }
+
     }
 
 };
