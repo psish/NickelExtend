@@ -315,6 +315,108 @@ Object.prototype.length = function length()
 };
 
 
+/**
+* merge: Merges an Object with another.
+*
+* @param Object obj The Object to merge to the current.
+*/
+Object.prototype.merge = function merge(obj)
+{
+
+    for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            this[key] = obj[key];
+        }
+    }
+
+    return this;
+    
+};
+
+
+/*****
+*
+* Request
+*  ~ Creates a Request Type to handle XHR.
+*
+*****/
+
+
+/*
+* sendAsBinary: Extends XHR prototype to add sendAsBinary method.
+*
+* @param String datastr Request body as string.
+*/
+XMLHttpRequest.prototype.sendAsBinary = function(datastr)
+{
+
+    function byteValue(x)
+    {
+
+        return x.charCodeAt(0) & 0xff;
+
+    }
+
+    var ords = Array.prototype.map.call(datastr, byteValue);
+    var ui8a = new Uint8Array(ords);
+    this.send(ui8a.buffer);
+
+};
+
+
+/*
+* Request: Instanciate a new XHR.
+*
+* @param [Object] options Request options.
+*/
+window.Request = function Request(options)
+{
+
+    this.$request = new XMLHttpRequest();
+    this.options  = {
+        method   : 'POST',
+        uri      : 'http://localhost',
+		headers: {
+			'X-Requested-With'  : 'XMLHttpRequest',
+			'Accept'            : 'text/javascript, text/html, application/xml,'
+			 + ' text/xml, */*'
+		},        
+    }
+    this.options.merge(options);
+    
+    this.$request.open(this.options.method, this.options.uri, true);
+
+};
+
+
+/**
+* send: Sends the XHR.
+*
+* @param [Mixed] options Requests parameters.
+*/
+window.Request.prototype.send = function send(options)
+{
+
+    this.$request.send(options);
+    return this;
+    
+};
+
+
+/**
+* send: Sends the XHR as Binary.
+*
+* @param [Mixed] options Requests parameters.
+*/
+window.Request.prototype.sendAsBinary = function sendAsBinary(options)
+{
+
+    this.$request.sendAsBinary(options);
+    return this;
+
+};
+
+
 /*****
 *
 * Element
@@ -324,7 +426,6 @@ Object.prototype.length = function length()
 
 
 /**
-
 * addEvent: Adds one or several EventListener(s) to a HTMLElement.
 *
 * @param String/Object id Event name or List of Events.
