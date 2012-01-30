@@ -17,8 +17,7 @@
 
 // Nickeljs global object
 this.Nickel = {
-    version: '0.1',
-    Tools: {}
+    version: '0.1'
 };
 
 
@@ -511,11 +510,9 @@ window.HTMLElement.prototype.removeEvent = function removeEvent(id)
     if (typeof id == 'string') {
         this.removeEventListener(id, this.$events[id], true);
     } else if (typeof id == 'object') {
-        Array.each(id, function(k) {
-
-            this.removeEvent(k);
-        
-        }.bind(this));    
+        for (var i = 0; i < id.length; i++) {
+            this.removeEvent(id[i]);
+        }
     }
 
     return this;
@@ -679,13 +676,11 @@ window.HTMLElement.prototype.setStyle = function setStyle(key, value)
 {
 
     if (typeof key == 'string') {
-        this.style[key] = Nickel.Tools.Styles.formatStyleValue(key, value);    
+        this.style[key] = NickelTools.formatStyleValue(key, value);    
     } else if (typeof key == 'object') {
-        Object.each(key, function(value, index) {
-
-            this.setStyle(index, value);
-
-        }.bind(this));
+        for (var value in key) {
+            this.setStyle(value, key[value]);
+        }
     }
 
     return this;
@@ -706,11 +701,9 @@ window.HTMLElement.prototype.getStyle = function getStyle(key)
         return window.getComputedStyle(this).getPropertyValue(key);    
     } else if (typeof key == 'object') {
         var result = new Object();
-        Array.each(key, function(k) {
-
-            result[k] = this.getStyle(k);
-        
-        }.bind(this));
+        for (var i = 0; i < key.length; i++) {
+            result[key[i]] = this.getStyle(key[i]);
+        }
         return result;
     }
 
@@ -730,11 +723,9 @@ window.HTMLElement.prototype.removeStyle = function removeStyle(key)
         this.setStyle(key, 0);
     } else if (typeof key == 'object') {
         var keys = new Object();
-        Array.each(key, function(k) {
-
-            keys[k] = 0;
-
-        });
+        for (var i = 0; i < key.length; i++) {
+            keys[key[i]] = 0;
+        }
         this.setStyles(keys);
     }
 
@@ -822,13 +813,13 @@ for (var key in window.HTMLElement.prototype) {
 * Tools.Styles: Tools for CSS Styles handling.
 *
 */
-Nickel.Tools.Styles = {
+var NickelTools = {
 
     /**
     * px: Array of CSS Properties with default values as pixels.
     *
     */
-    px: [
+    stylesAspx: [
         "border-bottom-left-radius", "border-bottom-right-radius",
         "border-bottom-width", "border-left-width", "border-right-width",
         "border-top-left-radius", "border-top-right-radius", "border-top-width",
@@ -851,13 +842,13 @@ Nickel.Tools.Styles = {
 
         if (value == '' || value == false || value == undefined
          || value == null) {
-            if (this.px.contains(key)) {
+            if (this.stylesAspx.contains(key)) {
                 return '0px';
             } else {
                 return 'none';
             }
         } else {
-            return ((typeof value == 'number' && this.px.contains(key))
+            return ((typeof value == 'number' && this.stylesAspx.contains(key))
              ? value.toString()+'px' : value);
         }
 
