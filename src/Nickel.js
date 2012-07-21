@@ -105,6 +105,7 @@ window.addEvent = function addEvent(id, fn)
 
 };
 
+window.addEvents = window.addEvent;
 
 /**
 * $: Gets an Element by its id.
@@ -160,6 +161,32 @@ window.$0 = function $0(selector)
 {
 
     return $$(selector)[0];
+
+};
+
+
+/**
+* $$$: Gets Elements by their tag name.
+*
+* @param String selector CSS Selector.
+*/
+window.$$$ = function $$$(selector)
+{
+
+    return document.getElementsByTagName(selector);
+
+};
+
+
+/**
+* $$$0: Gets the first occurence of $$$.
+*
+* @param String selector CSS Selector.
+*/
+window.$$$0 = function $$$0(selector)
+{
+
+    return $$$(selector)[0];
 
 };
 
@@ -484,9 +511,16 @@ window.HTMLElement.prototype.addEvent = function addEvent(id, fn)
 {
 
     if (typeof id == 'string') {
+        var customEvents = ['mouseleave', 'mouseenter'];
+
         this.$events = (this.$events ? this.$events : {});
         this.$events[id] = fn;
-        this.addEventListener(id, fn, true);
+
+        if (customEvents.indexOf(id) != -1) {
+            this.addEventListener(id, this[id](fn), true);
+        } else {
+            this.addEventListener(id, fn, true);
+        }
     } else if (typeof id == 'object') {
         for (var key in id) {
             this.addEvent(key, id[key]);
@@ -498,6 +532,58 @@ window.HTMLElement.prototype.addEvent = function addEvent(id, fn)
 };
 window.HTMLElement.prototype.addEvents = window.HTMLElement.prototype.addEvent;
 
+window.HTMLElement.prototype.contains = function contains(el)
+{
+
+    var res = false;
+    var children = this.getElementsByTagName('*');
+    for (var i = 0; i < children.length; i++) {
+        if (children[i] == el) {
+            res = true;
+        }
+    }
+
+    return res;
+
+};
+
+window.HTMLElement.prototype.checkRelation = function checkRelation(event)
+{
+
+    var related = event.relatedTarget;
+
+    if (related == null) return true;
+    if (!related) return false;
+
+    return related != this && typeof this != 'document' && !this.contains(related);
+
+};
+
+window.HTMLElement.prototype.mouseleave = function mouseleave(fn)
+{
+
+    this.addEventListener('mouseout', function(event) {
+
+        if (this.checkRelation(event)) {
+            fn.call(this, event);
+        }
+
+    }.bind(this));
+
+};
+
+window.HTMLElement.prototype.mouseenter = function mouseenter(fn)
+{
+
+    this.addEventListener('mouseover', function(event) {
+
+        if (this.checkRelation(event)) {
+            fn.call(this, event);
+        }
+
+    }.bind(this));
+
+};
 
 /*
 * removeEvent: Removes an Event from a HTMLElement.
@@ -676,7 +762,8 @@ window.HTMLElement.prototype.setStyle = function setStyle(key, value)
 {
 
     if (typeof key == 'string') {
-        this.style[key] = NickelTools.formatStyleValue(key, value);    
+        var format = NickelTools.formatStyleValue(key, value);
+        this.style[key] = format;    
     } else if (typeof key == 'object') {
         for (var value in key) {
             this.setStyle(value, key[value]);
@@ -735,6 +822,82 @@ window.HTMLElement.prototype.removeStyles =
 
 
 /*
+* addClass: Adds one or several CSS class(es) to an Element.
+*
+* @param String/Object key Name of the CSS class to add or Array of classes.
+* @param [String] value Value of the CSS attribute to set (Only for single set).
+*/
+window.HTMLElement.prototype.addClass = function addClass(key)
+{
+
+    if (typeof key == 'string') {
+        var cl = (this.className.length == 0 ? null : this.className);
+        if (!cl || cl.indexOf(key) == -1) {
+            this.className = (cl ? cl + ' ' + key : key);
+        }
+    } else if (typeof key == 'object') {
+        for (var i = 0; i < key.length; i++) {
+            this.addClass(key[i]);
+        }
+    }
+
+    return this;
+
+};
+window.HTMLElement.prototype.addClasses = window.HTMLElement.prototype.addClass;
+
+
+/*
+* removeClass: Removes one or several CSS class(es) to an Element.
+*
+* @param String/Object key Name of the CSS class to remove or Array of classes.
+*/
+window.HTMLElement.prototype.removeClass = function removeClass(key)
+{
+
+    if (typeof key == 'string') {
+        if (this.className.indexOf(key) != -1) {
+            var rep = key; 
+            var go = true;
+        } else {
+            var go = false;
+        }
+
+        if (go) {
+            if (this.className.indexOf(' ' + key) != -1) {
+                var rep = ' ' + key;
+            } else if (this.className.indexOf(key + ' ') != -1) {
+                var rep = key + ' ';
+            }
+            this.className = this.className.replace(rep, '');
+        }
+    } else if (typeof key == 'object') {
+        for (var i = 0; i < key.length; i++) {
+            this.removeClass(key[i]);
+        }
+    }
+
+    return this;
+
+};
+window.HTMLElement.prototype.removeClasses =
+ window.HTMLElement.prototype.removeClass;
+
+
+/*
+* hasClass: Checks if an Element has a CSS class.
+*
+* @param String key Name of the CSS class to check.
+*/
+window.HTMLElement.prototype.hasClass = function hasClass(key)
+{
+    
+    return (this.className.indexOf(key) != -1);
+
+};
+
+
+/*
 * Element: Creates an Element.
 *
 * @param String node Node type.
@@ -746,13 +909,15 @@ window.Element = function Element(node, options)
     this.$element = document.createElement(node);
 
     for (var o in options) {
-        if (o.toUpperCase() == 'TEXT') {
-            this.$element.innerText = options[o];
-        } else if (o.toUpperCase() == 'HTML') {
-            this.$element.innerHTML = options[o];        
-        } else {
-            this.$element.setAttribute(o, options[o]);        
-        } 
+        if (options.hasOwnProperty(o)) {
+            if (o.toUpperCase() == 'TEXT') {
+                this.$element.innerText = options[o];
+            } else if (o.toUpperCase() == 'HTML') {
+                this.$element.innerHTML = options[o];        
+            } else {
+                this.$element.setAttribute(o, options[o]);        
+            } 
+        }
     }
 
     return this;
@@ -775,15 +940,21 @@ window.Element.prototype.inject = function inject(parent, position)
     
     if (position == 'top') {
         var firstChild = parent.firstChild;
-        parent = firstChild.parentNode;
-        el = firstChild;
+        if (firstChild) {
+            parent = firstChild.parentNode;
+            el = firstChild;
+        }
     } else if (position == 'before') {
         el = parent;
         parent = parent.parentNode;
     } else if (position == 'after') {
-        var next = parent.nextSibling;    
-        parent = next.parentNode;
-        el = next;
+        var next = parent.nextSibling;
+        if (next) {
+            parent = next.parentNode;
+            el = next;
+        } else {
+            parent = parent.parentNode;
+        }
     }
 
     parent.insertBefore(this.$element, el);
